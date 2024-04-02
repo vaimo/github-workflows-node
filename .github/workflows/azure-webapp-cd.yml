@@ -1,0 +1,33 @@
+name: Node - Azure WebApp CD workflow
+on:
+  workflow_call:
+    secrets:
+      env-vars:
+        description: 'Environment variables to be set in .env file.'
+        required: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      CONTENTFUL_ACCESS_TOKEN: ${{ secrets.DEV_CONTENTFUL_ACCESS_TOKEN }}
+      CONTENTFUL_ENV: ${{ secrets.DEV_CONTENTFUL_ENV }}
+      CONTENTFUL_SPACE_ID: ${{ secrets.DEV_CONTENTFUL_SPACE_ID }}
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Create .env file
+        run: |
+          IFS=',' read -r -a ENV_VARS <<< "${{ secrets.env-vars }}"
+          for i in "${ENV_VARS[@]}"; do
+            KEY=$(echo $i | cut -f1 -d=)
+            VALUE=$(echo $i | cut -f2 -d=)
+            echo "$KEY=$VALUE" >> .env
+          done
+
+      - name: Build Docker images
+        run: docker-compose build
