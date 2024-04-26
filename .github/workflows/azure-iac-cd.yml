@@ -1,0 +1,90 @@
+name: Node - Azure IAC CD workflow
+on:
+  workflow_call:
+    secrets:
+      allowed-dirs:
+        description: 'Directories where Cloud functions are located. Split by comma.'
+        required: true
+
+jobs:
+  changes:
+    name: Look for changes in Cloud Functions
+    runs-on: ubuntu-latest
+    outputs:
+      directories: ${{ steps.filter.outputs.directories }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Check changed files
+        id: diff
+        run: |
+          if [ $GITHUB_BASE_REF ]; then
+            # Pull Request
+            git fetch origin $GITHUB_BASE_REF --depth=1
+            export DIFF=$( git diff --name-only origin/$GITHUB_BASE_REF $GITHUB_SHA )
+            echo "Diff between origin/$GITHUB_BASE_REF and $GITHUB_SHA"
+          else
+            # Push
+            git fetch origin ${{ github.event.before }} --depth=1
+            export DIFF=$( git diff --diff-filter=d --name-only ${{ github.event.before }} $GITHUB_SHA )
+            echo "Diff between ${{ github.event.before }} and $GITHUB_SHA"
+          fi
+          echo "$DIFF"
+          # Escape newlines (replace \n with %0A)
+          echo "diff=$( echo "$DIFF" | sed ':a;N;$!ba;s/\n/%0A/g' )" >> $GITHUB_OUTPUT
+      - name: Set matrix for build
+        id: filter
+        run: |
+          DIFF="${{ steps.diff.outputs.diff }}"
+          DIFF=$(printf '%b' "${DIFF//%0A/$'\n'}")
+
+          if [ -z "$DIFF" ]; then
+            echo "directories=[]" >> $GITHUB_OUTPUT
+          else
+            JSON="["
+            # Loop by lines
+            while read path; do
+
+            # Set $directory to substring before third /
+            directory="$( echo $path | cut -d'/' -f1-2 -s )"
+
+            # only allow directories specified in ALLOWED_DIRS
+            IFS=',' read -ra ALLOWED <<< "$ALLOWED_DIRS"
+            for i in "${ALLOWED[@]}"; do
+              if [[ "$directory" == "$i"* ]]; then
+                # Add build to the matrix only if it is not already included
+                JSONline="\"$directory\","
+
+                if [[ "$JSON" != *"$JSONline"* ]]; then
+                  JSON="$JSON$JSONline"
+                fi
+              fi
+            done
+            done <<< "$DIFF"
+
+            # Remove last "," and add closing brackets
+            if [[ $JSON == *, ]]; then
+              JSON="${JSON%?}"
+            fi
+            JSON="$JSON]"
+            echo $JSON
+
+            # Set output
+            echo "directories=$( echo "$JSON" )" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.directories != '[]' && needs.changes.outputs.directories != '' }}
+    strategy:
+      matrix:
+        directory: ${{ fromJSON(needs.changes.outputs.directories) }}
+    environment: ${{ github.base_ref || github.ref_name }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Build Docker images
+        run: docker-compose build
+        working-directory: ${{ matrix.directory }}
