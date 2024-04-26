@@ -1,9 +1,43 @@
 name: Node - Azure IAC CD workflow
 on:
   workflow_call:
-    secrets:
+    inputs:
       allowed-dirs:
         description: 'Directories where Cloud functions are located. Split by comma.'
+        required: true
+        type: string
+      acr-name:
+        description: 'Azure Container Registry name.'
+        required: true
+        type: string
+      shared-rg-name:
+        description: 'Shared resource group name.'
+        required: true
+        type: string
+      rg-name:
+        description: 'Resource group name.'
+        required: true
+        type: string
+      docker-image-tags:
+        description: 'Docker image tags.'
+        required: true
+        type: string
+      function-ids:
+        description: 'Function ids.'
+        required: true
+        type: string
+    secrets:
+      azure-tenant-id:
+        description: ''
+        required: true
+      azure-client-id:
+        description: ''
+        required: true
+      azure-shared-subscription-id:
+        description: ''
+        required: true
+      azure-subscription-id:
+        description: ''
         required: true
 
 jobs:
@@ -48,8 +82,8 @@ jobs:
             # Set $directory to substring before third /
             directory="$( echo $path | cut -d'/' -f1-2 -s )"
 
-            # only allow directories specified in ALLOWED_DIRS
-            IFS=',' read -ra ALLOWED <<< "$ALLOWED_DIRS"
+            # only allow directories specified in allowed-dirs
+            IFS=',' read -ra ALLOWED <<< "${{ inputs.allowed-dirs }}"
             for i in "${ALLOWED[@]}"; do
               if [[ "$directory" == "$i"* ]]; then
                 # Add build to the matrix only if it is not already included
@@ -81,10 +115,33 @@ jobs:
     strategy:
       matrix:
         directory: ${{ fromJSON(needs.changes.outputs.directories) }}
-    environment: ${{ github.base_ref || github.ref_name }}
     steps:
       - name: Check out code
         uses: actions/checkout@v4
-      - name: Build Docker images
-        run: docker-compose build
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          tenant-id: ${{ secrets.azure-tenant-id }}
+          client-id: ${{ secrets.azure-client-id }}
+          subscription-id: ${{ secrets.azure-shared-subscription-id }}
+
+      - name: Resolve a Docker image
+        run: |
+          DOCKER_IMAGE_TAG=$(echo '${{ inputs.docker-image-tags }}' | jq -r ".[\"${{ matrix.directory }}\"]")
+          echo "DOCKER_IMAGE_TAG=$DOCKER_IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Resolve a Function id
+        run: |
+          FUNCTION_ID=$(echo '${{ inputs.function-ids }}' | jq -r ".[\"${{ matrix.directory }}\"]")
+          echo "FUNCTION_ID=$FUNCTION_ID" >> $GITHUB_ENV
+
+      - name: Build Docker image
+        run: az acr build -r ${{ inputs.acr-name }} -g ${{ inputs.shared-rg-name }} -f Dockerfile -t ${{ env.DOCKER_IMAGE_TAG }} . --platform linux/amd64
         working-directory: ${{ matrix.directory }}
+
+      - name: Change subscription
+        run: az account set -s ${{ secrets.azure-subscription-id }}
+
+      - name: Update the FunctionApp
+        run: az functionapp config container set -n ${{ env.FUNCTION_ID }} -g ${{ inputs.rg-name }} --image ${{ env.DOCKER_IMAGE_TAG }}
