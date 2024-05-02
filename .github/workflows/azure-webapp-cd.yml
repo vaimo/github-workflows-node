@@ -73,7 +73,7 @@ jobs:
         shell: bash
         run: |
           az acr login \
-              --name ${{ vars.CONTAINER_REGISTRY_SERVER }} \
+              --name ${{ inputs.acr-name }}  \
               --expose-token
 
       - name: Build Docker image
