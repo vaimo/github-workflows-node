@@ -76,6 +76,9 @@ jobs:
               --name ${{ inputs.acr-name }}  \
               --expose-token
 
+      - name: ACR repository list
+        run: az acr repository list
+
       - name: Build Docker image
         run: az acr build -r ${{ inputs.acr-name }} -g ${{ inputs.shared-rg-name }} -f Dockerfile -t ${{ inputs.docker-image-tag }} . --platform linux/amd64
 
