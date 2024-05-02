@@ -14,10 +14,6 @@ on:
         description: 'Resource group name.'
         required: true
         type: string
-      runner:
-        description: 'Runner for github action'
-        required: false
-        type: string
       jobs-container-name:
         description: 'Container App name.'
         required: true
@@ -26,10 +22,19 @@ on:
         description: 'Docker image tag.'
         required: true
         type: string
-    secrets:
       env-vars:
-        description: 'Environment variables to be set in .env file.'
+        description: 'Environment variables to be set in .env file. Values are loaded from the key vault.'
+        required: true
+        type: string
+      key-vault:
+        description: 'Key vault name.'
+        required: true
+        type: string
+      runner:
+        description: 'Runner for github action'
         required: false
+        type: string
+    secrets:
       azure-tenant-id:
         description: ''
         required: true
@@ -62,11 +67,12 @@ jobs:
 
       - name: Create .env file
         run: |
-          IFS=',' read -r -a ENV_VARS <<< "${{ secrets.env-vars }}"
+          IFS=',' read -r -a ENV_VARS <<< "${{ inputs.env-vars }}"
           for i in "${ENV_VARS[@]}"; do
             KEY=$(echo $i | cut -f1 -d=)
-            VALUE=$(echo $i | cut -f2 -d=)
-            echo "$KEY=$VALUE" >> .env
+            SECRET_NAME=$(echo $i | cut -f2 -d=)
+            SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name ${{ inputs.key-vault }} --query value -o tsv)
+            echo "$KEY=$SECRET_VALUE" >> .env
           done
 
       - name: Login to ACR

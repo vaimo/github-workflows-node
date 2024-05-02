@@ -18,13 +18,17 @@ on:
         description: 'Resource group name.'
         required: true
         type: string
-      docker-image-tags:
-        description: 'Docker image tags.'
+      environment:
+        description: 'Environment name.'
         required: true
         type: string
-      function-ids:
-        description: 'Function ids.'
+      key-vault:
+        description: 'Key vault name.'
         required: true
+        type: string
+      runner:
+        description: 'Runner for github action'
+        required: false
         type: string
     secrets:
       azure-tenant-id:
@@ -109,7 +113,7 @@ jobs:
 
   build-and-deploy:
     name: Build and Deploy
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
     needs: changes
     if: ${{ needs.changes.outputs.directories != '[]' && needs.changes.outputs.directories != '' }}
     strategy:
@@ -126,15 +130,47 @@ jobs:
           client-id: ${{ secrets.azure-client-id }}
           subscription-id: ${{ secrets.azure-shared-subscription-id }}
 
+      - name: Create .env file
+        run: |
+          ENV_CONFIGURATION=$(jq -r ".\"env-vars\"" ${{ matrix.directory }}/azure/config.json)
+          cat $ENV_CONFIGURATION
+          
+          IFS=',' read -r -a ENV_VARS <<< $ENV_CONFIGURATION
+          for i in "${ENV_VARS[@]}"; do
+            KEY=$(echo $i | cut -f1 -d=)
+            SECRET_NAME=$(echo $i | cut -f2 -d=)
+            SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name ${{ inputs.key-vault }} --query value -o tsv)
+            echo "$KEY=$SECRET_VALUE" >> ${{ matrix.directory }}/.env
+          done
+
       - name: Resolve a Docker image
         run: |
-          DOCKER_IMAGE_TAG=$(echo '${{ inputs.docker-image-tags }}' | jq -r ".[\"${{ matrix.directory }}\"]")
+          DOCKER_IMAGE_TAG=$(jq -r ".\"docker-image-tag\"" ${{ matrix.directory }}/azure/config.json)
+          cat $DOCKER_IMAGE_TAG
           echo "DOCKER_IMAGE_TAG=$DOCKER_IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Resolve a Function id
         run: |
-          FUNCTION_ID=$(echo '${{ inputs.function-ids }}' | jq -r ".[\"${{ matrix.directory }}\"]")
+          FUNCTION_ID=$(jq -r ".\"function-ids\".\"${{ inputs.environment }}\"" ${{ matrix.directory }}/azure/config.json)
+          cat $FUNCTION_ID
           echo "FUNCTION_ID=$FUNCTION_ID" >> $GITHUB_ENV
+
+      - name: Check if DOCKER_IMAGE_TAG and FUNCTION_ID are set
+        run: |
+          if [[ -z "${DOCKER_IMAGE_TAG}" || -z "${FUNCTION_ID}" ]]; then
+            echo "DOCKER_IMAGE_TAG or FUNCTION_ID is not set. Exiting..."
+            exit 1
+          fi
+
+      - name: Login to ACR
+        shell: bash
+        run: |
+          az acr login \
+              --name ${{ inputs.acr-name }}  \
+              --expose-token
+
+      - name: ACR repository list
+        run: az acr repository list -n ${{ inputs.acr-name }}
 
       - name: Build Docker image
         run: az acr build -r ${{ inputs.acr-name }} -g ${{ inputs.shared-rg-name }} -f Dockerfile -t ${{ env.DOCKER_IMAGE_TAG }} . --platform linux/amd64
@@ -144,4 +180,7 @@ jobs:
         run: az account set -s ${{ secrets.azure-subscription-id }}
 
       - name: Update the FunctionApp
-        run: az functionapp config container set -n ${{ env.FUNCTION_ID }} -g ${{ inputs.rg-name }} --image ${{ env.DOCKER_IMAGE_TAG }}
+        run: az functionapp config container set -n ${{ env.FUNCTION_ID }} -g ${{ inputs.rg-name }} --image ${{ inputs.acr-name }}.azurecr.io/${{ env.DOCKER_IMAGE_TAG }}
+
+      - name: Restart the FunctionApp
+        run: az functionapp restart -n ${{ env.FUNCTION_ID }} -g ${{ inputs.rg-name }}
