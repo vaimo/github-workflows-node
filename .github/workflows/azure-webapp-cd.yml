@@ -86,4 +86,4 @@ jobs:
         run: az account set -s ${{ secrets.azure-subscription-id }}
 
       - name: Update the ContainerApp
-        run: az containerapp update -n ${{ inputs.jobs-container-name }} -g ${{ inputs.rg-name }} --image ${{ inputs.jobs-container-name }}.azurecr.io/${{ inputs.docker-image-tag }}
+        run: az containerapp update -n ${{ inputs.jobs-container-name }} -g ${{ inputs.rg-name }} --image ${{ inputs.acr-name }}.azurecr.io/${{ inputs.docker-image-tag }}
