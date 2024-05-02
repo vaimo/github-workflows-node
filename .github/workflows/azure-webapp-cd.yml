@@ -80,10 +80,10 @@ jobs:
         run: az acr repository list -n ${{ inputs.acr-name }}
 
       - name: Build Docker image
-        run: az acr build -r ${{ inputs.acr-name }} -g ${{ inputs.shared-rg-name }} -f Dockerfile -t ${{ inputs.docker-image-tag }} . --platform linux/amd64
+        run: az acr build -r ${{ inputs.acr-name }} -g ${{ inputs.shared-rg-name }} -t ${{ inputs.docker-image-tag }} . --platform linux/amd64
 
       - name: Change subscription
         run: az account set -s ${{ secrets.azure-subscription-id }}
 
       - name: Update the ContainerApp
-        run: az containerapp update -n ${{ inputs.jobs-container-name }} -g ${{ inputs.rg-name }} --image ${{ inputs.docker-image-tag }}
+        run: az containerapp update -n ${{ inputs.jobs-container-name }} -g ${{ inputs.rg-name }} --image ${{ inputs.jobs-container-name }}.azurecr.io/${{ inputs.docker-image-tag }}
