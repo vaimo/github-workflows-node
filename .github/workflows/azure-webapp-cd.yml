@@ -18,14 +18,6 @@ on:
         description: 'Container App name.'
         required: true
         type: string
-      docker-image-tag:
-        description: 'Docker image tag.'
-        required: true
-        type: string
-      env-vars:
-        description: 'Environment variables to be set in .env file. Values are loaded from the key vault.'
-        required: true
-        type: string
       key-vault:
         description: 'Key vault name.'
         required: true
@@ -67,13 +59,22 @@ jobs:
 
       - name: Create .env file
         run: |
-          IFS=',' read -r -a ENV_VARS <<< "${{ inputs.env-vars }}"
+          ENV_CONFIGURATION=$(jq -r ".\"env-vars\"" azure/config.json)
+          echo $ENV_CONFIGURATION
+          
+          IFS=',' read -r -a ENV_VARS <<< $ENV_CONFIGURATION
           for i in "${ENV_VARS[@]}"; do
             KEY=$(echo $i | cut -f1 -d=)
             SECRET_NAME=$(echo $i | cut -f2 -d=)
             SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name ${{ inputs.key-vault }} --query value -o tsv)
             echo "$KEY=$SECRET_VALUE" >> .env
           done
+
+      - name: Resolve a Docker image
+        run: |
+          DOCKER_IMAGE_TAG=$(jq -r ".\"docker-image-tag\"" azure/config.json)
+          echo $DOCKER_IMAGE_TAG
+          echo "DOCKER_IMAGE_TAG=$DOCKER_IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Login to ACR
         shell: bash
@@ -86,10 +87,10 @@ jobs:
         run: az acr repository list -n ${{ inputs.acr-name }}
 
       - name: Build Docker image
-        run: az acr build -r ${{ inputs.acr-name }} -g ${{ inputs.shared-rg-name }} -t ${{ inputs.docker-image-tag }} . --platform linux/amd64
+        run: az acr build -r ${{ inputs.acr-name }} -g ${{ inputs.shared-rg-name }} -t ${{ env.DOCKER_IMAGE_TAG }} . --platform linux/amd64
 
       - name: Change subscription
         run: az account set -s ${{ secrets.azure-subscription-id }}
 
       - name: Update the ContainerApp
-        run: az containerapp update -n ${{ inputs.jobs-container-name }} -g ${{ inputs.rg-name }} --image ${{ inputs.acr-name }}.azurecr.io/${{ inputs.docker-image-tag }}
+        run: az containerapp update -n ${{ inputs.jobs-container-name }} -g ${{ inputs.rg-name }} --image ${{ inputs.acr-name }}.azurecr.io/${{ env.DOCKER_IMAGE_TAG }}
