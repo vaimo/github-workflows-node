@@ -18,6 +18,10 @@ on:
         description: 'Container App name.'
         required: true
         type: string
+      environment:
+        description: 'Environment name.'
+        required: true
+        type: string
       key-vault:
         description: 'Key vault name.'
         required: true
@@ -69,13 +73,6 @@ jobs:
             SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name ${{ inputs.key-vault }} --query value -o tsv)
             echo "$KEY=$SECRET_VALUE" >> .env
           done
-          cat .env
-
-      - name: Resolve a Docker image
-        run: |
-          DOCKER_IMAGE_TAG=$(jq -r ".\"docker-image-tag\"" azure/config.json)
-          echo $DOCKER_IMAGE_TAG
-          echo "DOCKER_IMAGE_TAG=$DOCKER_IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Login to ACR
         shell: bash
