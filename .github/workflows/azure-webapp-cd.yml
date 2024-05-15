@@ -74,6 +74,42 @@ jobs:
             echo "$KEY=$SECRET_VALUE" >> .env
           done
 
+      - name: Resolve a Docker image with incremented tag
+        run: |
+          DOCKER_IMAGE_TAG=$(jq -r ".\"docker-image-tags\".\"${{ inputs.environment }}\"" azure/config.json)
+          echo $DOCKER_IMAGE_TAG
+          
+          # Retrieve the latest Docker image tag from ACR
+          LATEST_TAG=$(az acr repository show-tags --name ${{ inputs.acr-name }} --repository $DOCKER_IMAGE_TAG --orderby time_desc --output tsv | head -n 1)
+          
+          # Check if LATEST_TAG is empty or not
+          if [ -z "$LATEST_TAG" ]
+          then
+            # If LATEST_TAG is empty, default VERSION_NUMBER to 0
+            VERSION_NUMBER=0
+          else
+            # If LATEST_TAG is not empty, check if it's a number
+            if [[ $LATEST_TAG =~ ^[0-9]+$ ]]
+            then
+              # If LATEST_TAG is a number, extract the version number
+              VERSION_NUMBER=$LATEST_TAG
+            else
+              # If LATEST_TAG is not a number, default VERSION_NUMBER to 0
+              VERSION_NUMBER=0
+            fi
+          fi                
+          
+          # Increment the version number
+          NEW_VERSION_NUMBER=$((VERSION_NUMBER + 1))
+          
+          # Build the Docker image with the new tag
+          NEW_DOCKER_IMAGE_TAG="$DOCKER_IMAGE_TAG:$NEW_VERSION_NUMBER"
+          
+          echo $NEW_DOCKER_IMAGE_TAG
+
+          # Set the new Docker image tag as an environment variable for subsequent steps
+          echo "DOCKER_IMAGE_TAG=$NEW_DOCKER_IMAGE_TAG" >> $GITHUB_ENV
+
       - name: Login to ACR
         shell: bash
         run: |
