@@ -22,15 +22,14 @@ on:
         description: 'Environment name.'
         required: true
         type: string
-      key-vault:
-        description: 'Key vault name.'
-        required: true
-        type: string
       runner:
         description: 'Runner for github action'
         required: false
         type: string
     secrets:
+      env-vars:
+        description: 'Environment variables to be set in .env file in a JSON format.'
+        required: true
       azure-tenant-id:
         description: ''
         required: true
@@ -53,6 +52,7 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v4
+
       - name: Check changed files
         id: diff
         run: |
@@ -70,6 +70,7 @@ jobs:
           echo "$DIFF"
           # Escape newlines (replace \n with %0A)
           echo "diff=$( echo "$DIFF" | sed ':a;N;$!ba;s/\n/%0A/g' )" >> $GITHUB_OUTPUT
+
       - name: Set matrix for build
         id: filter
         run: |
@@ -133,15 +134,14 @@ jobs:
 
       - name: Create .env file
         run: |
-          ENV_CONFIGURATION=$(jq -r ".\"env-vars\"" ${{ matrix.directory }}/azure/config.json)
-          echo $ENV_CONFIGURATION
+          echo '${{ secrets.env-vars }}' > secrets.json
+          ENV_CONFIGURATION=$(jq -r ".\"${{ matrix.directory }}\"" secrets.json)
+          IFS=';' read -r -a ENV_VARS <<< $ENV_CONFIGURATION
           
-          IFS=',' read -r -a ENV_VARS <<< $ENV_CONFIGURATION
           for i in "${ENV_VARS[@]}"; do
             KEY=$(echo $i | cut -f1 -d=)
-            SECRET_NAME=$(echo $i | cut -f2 -d=)
-            SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name ${{ inputs.key-vault }} --query value -o tsv)
-            echo "$KEY=$SECRET_VALUE" >> ${{ matrix.directory }}/.env
+            VALUE=$(echo $i | cut -f2 -d=)
+            echo "$KEY=$VALUE" >> ${{ matrix.directory }}/.env
           done
 
       - name: Resolve a Docker image with incremented tag

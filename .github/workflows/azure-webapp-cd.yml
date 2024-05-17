@@ -22,15 +22,14 @@ on:
         description: 'Environment name.'
         required: true
         type: string
-      key-vault:
-        description: 'Key vault name.'
-        required: true
-        type: string
       runner:
         description: 'Runner for github action'
         required: false
         type: string
     secrets:
+      env-vars:
+        description: 'Environment variables to be set in .env file.'
+        required: false
       azure-tenant-id:
         description: ''
         required: true
@@ -63,15 +62,11 @@ jobs:
 
       - name: Create .env file
         run: |
-          ENV_CONFIGURATION=$(jq -r ".\"env-vars\"" azure/config.json)
-          echo $ENV_CONFIGURATION
-          
-          IFS=',' read -r -a ENV_VARS <<< $ENV_CONFIGURATION
+          IFS=';' read -r -a ENV_VARS <<< "${{ secrets.env-vars }}"
           for i in "${ENV_VARS[@]}"; do
             KEY=$(echo $i | cut -f1 -d=)
-            SECRET_NAME=$(echo $i | cut -f2 -d=)
-            SECRET_VALUE=$(az keyvault secret show --name $SECRET_NAME --vault-name ${{ inputs.key-vault }} --query value -o tsv)
-            echo "$KEY=$SECRET_VALUE" >> .env
+            VALUE=$(echo $i | cut -f2 -d=)
+            echo "$KEY=$VALUE" >> .env
           done
 
       - name: Resolve a Docker image with incremented tag
