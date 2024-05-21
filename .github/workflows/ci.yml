@@ -46,6 +46,7 @@ jobs:
             VALUE=$(echo $i | cut -f2 -d=)
             echo "$KEY=$VALUE" >> .env
           done
+          cat .env
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile

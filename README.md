@@ -35,7 +35,7 @@ jobs:
 ## Node - Azure WebApp CD workflow
 
 - This workflow is used to deploy a Docker image to an Azure Container App. 
-- Before the build, the workflow fetches the environment variables from the Azure Key Vault and creates a .env file in the root of the project.
+- Before the build, the workflow fetches the environment variables from GitHub secrets and creates a .env file in the root of the project.
 - The image is built and pushed using "az acr build" command.
 - After successful push, the workflow updates the Azure Container App with the new image using "az containerapp update" command.
 
@@ -61,17 +61,13 @@ jobs:
       # Docker image tag
       # Required
       docker-image-tag: image-name:latest
-      # Environment variables configuration (separated by comma)
-      # BUNDLE_ANALYZE=Bundle--Analyze - will create a .env file with the key BUNDLE_ANALYZE and value Bundle--Analyze loaded from the Azure key-vault
-      # Required
-      env-vars: BUNDLE_ANALYZE=Bundle--Analyze
-      # Azure Key Vault name
-      # Required
-      key-vault: key-vault
       # Run in github hosted runner or self-hosted runner
       # Optional - if not specified then uses 'ubuntu-latest' runner
       runner: self-hosted
     secrets:
+      # Based on the string passed here, the action will create a .env file in the root of the project.
+      # Required
+      env-vars: KEY=${{ secrets.VALUE }},KEY_1=${{ secrets.VALUE_2 }}
       # Azure Tenant ID
       # Required
       azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -89,7 +85,7 @@ jobs:
 ## Node - Azure IAC CD workflow
 
 - This workflow is used to deploy multiple functions to corresponding Azure Functions. 
-- Before the build, the workflow fetches the environment variables from the Azure Key Vault and creates a .env file in the function directory.
+- Before the build, the workflow fetches the environment variables from GitHub secrets and creates a .env file in the function directory.
 - Each function image is built and pushed using "az acr build" command.
 - After each successful push, the workflow updates all the Azure Functions with the new image using "az functionapp config container set" command.
 
@@ -115,17 +111,17 @@ jobs:
       # Azure function ids in a JSON format. Key is the function name and value is the function id.
       # Required
       function-ids: '{"azure-functions/http-cvw-algolia": "func-dev-web-jobs"}'
-      # Environment variables configuration (separated by comma) per function.
-      # BUNDLE_ANALYZE=Bundle--Analyze - will create a .env file with the key BUNDLE_ANALYZE and value Bundle--Analyze loaded from the Azure key-vault
-      # Required
-      env-vars: '{"azure-functions/http-cvw-algolia": "BUNDLE_ANALYZE=Bundle--Analyze"}'
-      # Azure Key Vault name
-      # Required
-      key-vault: key-vault
       # Run in github hosted runner or self-hosted runner
       # Optional - if not specified then uses 'ubuntu-latest' runner
       runner: self-hosted
     secrets:
+      # Based on the string passed here, the action will create a .env file in the azure function directory.
+      # Required
+      env-vars: |
+          {
+            "azure-functions/http-cvw-algolia": "KEY=${{ secrets.VALUE }},KEY_1=${{ secrets.VALUE_2 }}",
+            "azure-functions/http-cvw-application-form": "KEY=${{ secrets.VALUE }},KEY_1=${{ secrets.VALUE_2 }}"
+          }
       # Azure Tenant ID
       # Required
       azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
