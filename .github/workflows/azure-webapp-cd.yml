@@ -62,13 +62,10 @@ jobs:
 
       - name: Create .env file
         run: |
-          while IFS= read -r line; do
-            lines+=("$line")
-          done <<< "${{ secrets.env-vars }}"
-
-          for i in "${lines[@]}"; do
-            KEY=${i%%=*}
-            VALUE=${i#*=}
+          IFS=';' read -r -a ENV_VARS <<< "${{ secrets.env-vars }}"
+          for i in "${ENV_VARS[@]}"; do
+            KEY=$(echo $i | cut -f1 -d=)
+            VALUE=$(echo $i | cut -f2 -d=)
             echo "$KEY=$VALUE" >> .env
           done
 
