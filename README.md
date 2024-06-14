@@ -29,7 +29,9 @@ jobs:
     secrets:
       # If your build process requires environment variables, you can pass them here. Based on the string passed here, the action will create a .env file in the root of the project.
       # Optional - if not specified then .env file will not be created
-      env-vars: KEY=${{ secrets.VALUE }},KEY_1=${{ secrets.VALUE_2 }}
+      env-vars: | 
+        KEY=${{ secrets.VALUE }}
+        KEY_2=${{ secrets.VALUE_2 }}
 ```
 
 ## Node - Azure WebApp CD workflow
@@ -67,7 +69,9 @@ jobs:
     secrets:
       # Based on the string passed here, the action will create a .env file in the root of the project.
       # Required
-      env-vars: KEY=${{ secrets.VALUE }},KEY_1=${{ secrets.VALUE_2 }}
+      env-vars: |
+        KEY=${{ secrets.VALUE }}
+        KEY_2=${{ secrets.VALUE_2 }}
       # Azure Tenant ID
       # Required
       azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
