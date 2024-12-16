@@ -142,8 +142,8 @@ jobs:
           IFS=';' read -r -a ENV_VARS <<< $ENV_CONFIGURATION
           
           for i in "${ENV_VARS[@]}"; do
-            KEY=$(echo $i | cut -f1 -d=)
-            VALUE=$(echo $i | cut -f2 -d=)
+            KEY=${i%%=*}
+            VALUE=${i#*=}
             echo "$KEY=$VALUE" >> ${{ matrix.directory }}/.env
           done
 
