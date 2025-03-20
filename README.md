@@ -1,37 +1,58 @@
-# GitHub Workflows for Magento 
+# GitHub Workflows for Node.js
 
-This repository contains reusable workflows for Node projects.
+This repository contains reusable workflows for Node.js projects.
 
-# Usage
+**Author:** Patryk Waluś (patryk.walus@vaimo.com)
 
-In order to utilize one of the workflows, it is necessary to include this configuration within the .yml file of your project. 
+## Supported Versions
+- **v1**  
+  Initial version of the workflows.
 
-## Node - Yarn CI workflow
+---
+
+## Node.js - Yarn CI Workflow
+
+This workflow sets up a Node.js environment, runs ESLint, and executes tests.
+
+### Usage
 
 ```yaml
 jobs:
-  
-  # Name of the job
   ci-workflow:
-    # Specify the workflow and it's version
-    uses: vaimo/github-workflows-node/.github/workflows/ci.yml@main
+    uses: vaimo/github-workflows-node/.github/workflows/ci.yml@v4
     with:
-      # Node version that will be used to run action.
+      # Node.js version to install (Required)
       node-version: 20
-      # Directories where junit report is located (separated by comma).
-      # Optional - if not specified then uses */junit.xml as default
+
+      # Directories where JUnit reports are located (Optional, defaults to */junit.xml)
       junit-test-report-path: azure-functions/*/junit.xml,sdk/*/junit.xml
-      # Name and where coverage report file is located (separated by comma). Applicable only if report is not located in coverage/coverage-summary.json folder.
-      # Optional - if not specified then uses ./coverage/coverage-summary.json as default
+
+      # Custom coverage report configuration (Optional, defaults to ./coverage/coverage-summary.json)
       junit-test-coverage-configuration: |
         http-cvw-algolia, azure-functions/http-cvw-algolia/coverage/coverage-summary.json
         http-cvw-application-form, azure-functions/http-cvw-application-form/coverage/coverage-summary.json
+
+      # Run full ESLint analysis or only modified files (Optional, defaults to full)
+      full-analysis: true
+
+      # Enable or disable custom NPM registry access (Optional, defaults to false)
+      enable-npm-registry: true
     secrets:
-      # If your build process requires environment variables, you can pass them here. Based on the string passed here, the action will create a .env file in the root of the project.
-      # Optional - if not specified then .env file will not be created
-      env-vars: | 
-        KEY=${{ secrets.VALUE }}
-        KEY_2=${{ secrets.VALUE_2 }}
+      # Environment variables for the build process (Optional)
+      env-vars: |
+        KEY=${{ secrets.KEY }}
+        KEY_2=${{ secrets.KEY_2 }}
+        
+      # Custom NPM registry URL (e.g., https://registry.npmjs.org or private registry)
+      npm-registry-url: ${{ secrets.npm-registry-url }}
+  
+      # NPM package scope (e.g., @yourcompany) (Required if enable-npm-registry is true)
+      npm-registry-scope: ${{ secrets.npm-registry-scope }}
+      
+      # Custom NPM registry authentication details (Required if enable-npm-registry is true)
+      npm-registry-email: ${{ secrets.NPM_REGISTRY_EMAIL }}
+      npm-registry-user: ${{ secrets.NPM_REGISTRY_USER }}
+      npm-registry-password: ${{ secrets.NPM_REGISTRY_PASSWORD }}
 ```
 
 ## Node - Azure WebApp CD workflow
@@ -43,46 +64,34 @@ jobs:
 
 ```yaml
 jobs:
-  # Name of the job
   cd-workflow:
-    # Specify the workflow and it's version
-    uses: vaimo/github-workflows-node/.github/workflows/azure-webapp-cd.yml@main
+    uses: vaimo/github-workflows-node/.github/workflows/azure-webapp-cd.yml@v4
     with:
-      # Azure Container Registry name
-      # Required
+      # Azure container registry (Required)
       acr-name: acr-name
-      # Azure Container Registry resource group name
-      # Required
+
+      # Resource group names (Required)
       shared-rg-name: shared-rg-name
-      # Azure Container Registry environment subscription specific resource group name
-      # Required
       rg-name: rg-name
-      # Azure Container App name
-      # Required
-      jobs-container-name: jobs-container-name
-      # Docker image tag
-      # Required
-      docker-image-tag: image-name:latest
-      # Run in github hosted runner or self-hosted runner
-      # Optional - if not specified then uses 'ubuntu-latest' runner
+      
+      # Azure Container App name (Required)
+      container-name: container-name
+
+      # Azure environment name (Required)
+      environment: environment
+
+      # Runner type (Optional, defaults to 'ubuntu-latest')
       runner: self-hosted
     secrets:
-      # Based on the string passed here, the action will create a .env file in the root of the project.
-      # Required
+      # Environment variables (Required)
       env-vars: |
         KEY=${{ secrets.VALUE }}
         KEY_2=${{ secrets.VALUE_2 }}
-      # Azure Tenant ID
-      # Required
+
+      # Azure authentication credentials (Required)
       azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-      # Azure Client ID
-      # Required
       azure-client-id: ${{ secrets.AZURE_CLIENT_ID_DEV }}
-      # Azure Shared Subscription ID
-      # Required
       azure-shared-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      # Azure Subscription ID
-      # Required
       azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID_DEV }}
 ```
 
@@ -95,47 +104,33 @@ jobs:
 
 ```yaml
 jobs:
-  # Name of the job
   cd-workflow:
-    # Specify the workflow and it's version
-    uses: vaimo/github-workflows-node/.github/workflows/azure-webapp-cd.yml@main
+    uses: vaimo/github-workflows-node/.github/workflows/azure-iac-cd.yml@v4
     with:
-      # Directories where Cloud functions are located. Split by comma.
-      # Required
+      # Directories where cloud functions are located (Required, split by comma)
       allowed-dirs: 'azure-functions'
-      # Azure Container Registry resource group name
-      # Required
+
+      # Azure container registry (Required)
+      acr-name: acr-name
+
+      # Resource group names (Required)
       shared-rg-name: shared-rg-name
-      # Azure Container Registry environment subscription specific resource group name
-      # Required
       rg-name: rg-name
-      # Docker image tags in a JSON format. Key is the function name and value is the tag.
-      # Required
-      docker-image-tags: '{"azure-functions/http-cvw-algolia": "function/integration:latest"}'
-      # Azure function ids in a JSON format. Key is the function name and value is the function id.
-      # Required
-      function-ids: '{"azure-functions/http-cvw-algolia": "func-dev-web-jobs"}'
-      # Run in github hosted runner or self-hosted runner
-      # Optional - if not specified then uses 'ubuntu-latest' runner
+
+      # Runner type (Optional, defaults to 'ubuntu-latest')
       runner: self-hosted
     secrets:
-      # Based on the string passed here, the action will create a .env file in the azure function directory.
-      # Required
+      # Environment variables per function (Required)
       env-vars: |
-          {
-            "azure-functions/http-cvw-algolia": "KEY=${{ secrets.VALUE }},KEY_1=${{ secrets.VALUE_2 }}",
-            "azure-functions/http-cvw-application-form": "KEY=${{ secrets.VALUE }},KEY_1=${{ secrets.VALUE_2 }}"
-          }
-      # Azure Tenant ID
-      # Required
+        {
+          "azure-functions/http-cvw-algolia": "KEY=${{ secrets.VALUE }},KEY_1=${{ secrets.VALUE_2 }}",
+          "azure-functions/http-cvw-application-form": "KEY=${{ secrets.VALUE }},KEY_1=${{ secrets.VALUE_2 }}"
+        }
+
+      # Azure authentication credentials (Required)
       azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-      # Azure Client ID
-      # Required
       azure-client-id: ${{ secrets.AZURE_CLIENT_ID_DEV }}
-      # Azure Shared Subscription ID
-      # Required
       azure-shared-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      # Azure Subscription ID
-      # Required
       azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID_DEV }}
+
 ```

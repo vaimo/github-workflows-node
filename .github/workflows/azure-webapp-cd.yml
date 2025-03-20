@@ -14,7 +14,7 @@ on:
         description: 'Resource group name.'
         required: true
         type: string
-      jobs-container-name:
+      container-name:
         description: 'Container App name.'
         required: true
         type: string
@@ -128,4 +128,4 @@ jobs:
         run: az account set -s ${{ secrets.azure-subscription-id }}
 
       - name: Update the ContainerApp
-        run: az containerapp update -n ${{ inputs.jobs-container-name }} -g ${{ inputs.rg-name }} --image ${{ inputs.acr-name }}.azurecr.io/${{ env.DOCKER_IMAGE_TAG }}
+        run: az containerapp update -n ${{ inputs.container-name }} -g ${{ inputs.rg-name }} --image ${{ inputs.acr-name }}.azurecr.io/${{ env.DOCKER_IMAGE_TAG }}

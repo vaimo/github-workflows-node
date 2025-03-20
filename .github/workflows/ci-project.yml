@@ -1,0 +1,111 @@
+name: Node - Yarn CI workflow
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: 'Set a node version for your workflow.'
+        required: true
+        type: string
+      junit-test-report-path:
+        description: 'Select directories where junit report is located (separated by comma).'
+        required: true
+        type: string
+        default: '*/junit.xml'
+      junit-test-coverage-configuration:
+        description: 'Name and where coverage report file is located (separated by comma). Applicable only if report is not located in coverage/coverage-summary.json folder.'
+        required: false
+        type: string
+      full-analysis:
+        description: 'Perform full analysis if true, if false only analysis of modified files.'
+        required: true
+        default: 'true'
+        type: string
+      enable-npm-registry:
+        description: 'Enable npm registry.'
+        required: true
+        default: 'false'
+        type: string
+    secrets:
+      env-vars:
+        description: 'Environment variables to be set in .env file.'
+        required: false
+      npm-registry-url:
+        description: 'Custom NPM registry URL (e.g., https://registry.npmjs.org or private registry).'
+        required: false
+      npm-registry-scope:
+        description: 'NPM package scope (e.g., @yourcompany).'
+        required: false
+      npm-registry-email:
+        description: 'NPM email for authentication.'
+        required: false
+      npm-registry-user:
+        description: 'NPM username for authentication.'
+        required: false
+      npm-registry-password:
+        description: 'NPM password for authentication.'
+        required: false
+
+jobs:
+  build:
+    name: Build
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    environment: CI
+    steps:
+      - name: Setup node
+        uses: vaimo/action-setup-node@v1
+        with:
+          node-version: ${{ inputs.node-version }}
+          enable-npm-registry: ${{ inputs.enable-npm-registry }}
+          npm-registry-url: ${{ secrets.npm-registry-url }}
+          npm-registry-scope: ${{ secrets.npm-registry-scope }}
+          npm-registry-email: ${{ secrets.npm-registry-email }}
+          npm-registry-user: ${{ secrets.npm-registry-user }}
+          npm-registry-password: ${{ secrets.npm-registry-password }}
+      - name: Build action
+        uses: vaimo/action-node-build@v1
+        with:
+          node-version: ${{ inputs.node-version }}
+          env-vars: ${{ secrets.env-vars }}
+
+  code-quality:
+    name: Code quality
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup node
+        uses: vaimo/action-setup-node@v1
+        with:
+          node-version: ${{ inputs.node-version }}
+          enable-npm-registry: ${{ inputs.enable-npm-registry }}
+          npm-registry-url: ${{ secrets.npm-registry-url }}
+          npm-registry-scope: ${{ secrets.npm-registry-scope }}
+          npm-registry-email: ${{ secrets.npm-registry-email }}
+          npm-registry-user: ${{ secrets.npm-registry-user }}
+          npm-registry-password: ${{ secrets.npm-registry-password }}
+      - name: Code quality action
+        uses: vaimo/action-node-eslint@v1
+        with:
+          node-version: ${{ inputs.node-version }}
+          full-analysis: ${{ inputs.full-analysis }}
+
+  tests:
+    name: Tests
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup node
+        uses: vaimo/action-setup-node@v1
+        with:
+          node-version: ${{ inputs.node-version }}
+          enable-npm-registry: ${{ inputs.enable-npm-registry }}
+          npm-registry-url: ${{ secrets.npm-registry-url }}
+          npm-registry-scope: ${{ secrets.npm-registry-scope }}
+          npm-registry-email: ${{ secrets.npm-registry-email }}
+          npm-registry-user: ${{ secrets.npm-registry-user }}
+          npm-registry-password: ${{ secrets.npm-registry-password }}
+      - name: Tests action
+        uses: vaimo/action-node-tests@v1
+        with:
+          junit-test-report-path: ${{ inputs.junit-test-report-path }}
+          junit-test-coverage-configuration: ${{ inputs.junit-test-coverage-configuration }}
