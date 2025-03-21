@@ -50,7 +50,6 @@ jobs:
     name: Build
     timeout-minutes: 10
     runs-on: ubuntu-latest
-    environment: CI
     steps:
       - name: Setup node
         uses: vaimo/action-setup-node@v1
@@ -62,6 +61,7 @@ jobs:
           npm-registry-email: ${{ secrets.npm-registry-email }}
           npm-registry-user: ${{ secrets.npm-registry-user }}
           npm-registry-password: ${{ secrets.npm-registry-password }}
+
       - name: Build action
         uses: vaimo/action-node-build@v1
         with:
@@ -83,6 +83,7 @@ jobs:
           npm-registry-email: ${{ secrets.npm-registry-email }}
           npm-registry-user: ${{ secrets.npm-registry-user }}
           npm-registry-password: ${{ secrets.npm-registry-password }}
+
       - name: Code quality action
         uses: vaimo/action-node-eslint@v1
         with:
@@ -104,6 +105,7 @@ jobs:
           npm-registry-email: ${{ secrets.npm-registry-email }}
           npm-registry-user: ${{ secrets.npm-registry-user }}
           npm-registry-password: ${{ secrets.npm-registry-password }}
+
       - name: Tests action
         uses: vaimo/action-node-tests@v1
         with:

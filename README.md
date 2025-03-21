@@ -19,7 +19,7 @@ This workflow sets up a Node.js environment, runs ESLint, and executes tests.
 ```yaml
 jobs:
   ci-workflow:
-    uses: vaimo/github-workflows-node/.github/workflows/ci.yml@v4
+    uses: vaimo/github-workflows-node/.github/workflows/ci-project.yml@v4
     with:
       # Node.js version to install (Required)
       node-version: 20
