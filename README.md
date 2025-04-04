@@ -5,7 +5,8 @@ This repository contains reusable workflows for Node.js projects.
 **Author:** Patryk Waluś (patryk.walus@vaimo.com)
 
 ## Supported Versions
-- **v1**  
+
+- **v4**  
   Initial version of the workflows.
 
 ---
@@ -42,13 +43,13 @@ jobs:
       env-vars: |
         KEY=${{ secrets.KEY }}
         KEY_2=${{ secrets.KEY_2 }}
-        
+
       # Custom NPM registry URL (e.g., https://registry.npmjs.org or private registry)
       npm-registry-url: ${{ secrets.npm-registry-url }}
-  
+
       # NPM package scope (e.g., @yourcompany) (Required if enable-npm-registry is true)
       npm-registry-scope: ${{ secrets.npm-registry-scope }}
-      
+
       # Custom NPM registry authentication details (Required if enable-npm-registry is true)
       npm-registry-email: ${{ secrets.NPM_REGISTRY_EMAIL }}
       npm-registry-user: ${{ secrets.NPM_REGISTRY_USER }}
@@ -57,7 +58,7 @@ jobs:
 
 ## Node - Azure WebApp CD workflow
 
-- This workflow is used to deploy a Docker image to an Azure Container App. 
+- This workflow is used to deploy a Docker image to an Azure Container App.
 - Before the build, the workflow fetches the environment variables from GitHub secrets and creates a .env file in the root of the project.
 - The image is built and pushed using "az acr build" command.
 - After successful push, the workflow updates the Azure Container App with the new image using "az containerapp update" command.
@@ -73,7 +74,7 @@ jobs:
       # Resource group names (Required)
       shared-rg-name: shared-rg-name
       rg-name: rg-name
-      
+
       # Azure Container App name (Required)
       container-name: container-name
 
@@ -97,7 +98,7 @@ jobs:
 
 ## Node - Azure IAC CD workflow
 
-- This workflow is used to deploy multiple functions to corresponding Azure Functions. 
+- This workflow is used to deploy multiple functions to corresponding Azure Functions.
 - Before the build, the workflow fetches the environment variables from GitHub secrets and creates a .env file in the function directory.
 - Each function image is built and pushed using "az acr build" command.
 - After each successful push, the workflow updates all the Azure Functions with the new image using "az functionapp config container set" command.
@@ -108,7 +109,7 @@ jobs:
     uses: vaimo/github-workflows-node/.github/workflows/azure-iac-cd.yml@v4
     with:
       # Directories where cloud functions are located (Required, split by comma)
-      allowed-dirs: 'azure-functions'
+      allowed-dirs: "azure-functions"
 
       # Azure container registry (Required)
       acr-name: acr-name
@@ -132,5 +133,4 @@ jobs:
       azure-client-id: ${{ secrets.AZURE_CLIENT_ID_DEV }}
       azure-shared-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID_DEV }}
-
 ```
