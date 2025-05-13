@@ -8,7 +8,7 @@ on:
         type: string
       junit-test-report-path:
         description: 'Select directories where junit report is located (separated by comma).'
-        required: true
+        required: false
         type: string
         default: '*/junit.xml'
       junit-test-coverage-configuration:
@@ -23,6 +23,11 @@ on:
       working-directory:
         description: 'Set working directory for your workflow.'
         required: false
+        type: string
+      enable-tests:
+        description: 'Enable tests if true.'
+        required: false
+        default: 'true'
         type: string
       enable-npm-registry:
         description: 'Enable npm registry.'
@@ -98,6 +103,7 @@ jobs:
     name: Tests
     timeout-minutes: 10
     runs-on: ubuntu-latest
+    if: ${{ inputs.enable-tests == 'true' }}
     steps:
       - name: Setup node
         uses: vaimo/action-setup-node@v1
