@@ -20,6 +20,10 @@ on:
         required: false
         default: 'true'
         type: string
+      working-directory:
+        description: 'Set working directory for your workflow.'
+        required: false
+        type: string
       enable-npm-registry:
         description: 'Enable npm registry.'
         required: false
@@ -55,6 +59,7 @@ jobs:
         uses: vaimo/action-setup-node@v1
         with:
           node-version: ${{ inputs.node-version }}
+          working-directory: ${{ inputs.working-directory }}
           enable-npm-registry: ${{ inputs.enable-npm-registry }}
           npm-registry-url: ${{ secrets.npm-registry-url }}
           npm-registry-scope: ${{ secrets.npm-registry-scope }}
@@ -76,6 +81,7 @@ jobs:
         uses: vaimo/action-setup-node@v1
         with:
           node-version: ${{ inputs.node-version }}
+          working-directory: ${{ inputs.working-directory }}
           enable-npm-registry: ${{ inputs.enable-npm-registry }}
           npm-registry-url: ${{ secrets.npm-registry-url }}
           npm-registry-scope: ${{ secrets.npm-registry-scope }}
@@ -97,6 +103,7 @@ jobs:
         uses: vaimo/action-setup-node@v1
         with:
           node-version: ${{ inputs.node-version }}
+          working-directory: ${{ inputs.working-directory }}
           enable-npm-registry: ${{ inputs.enable-npm-registry }}
           npm-registry-url: ${{ secrets.npm-registry-url }}
           npm-registry-scope: ${{ secrets.npm-registry-scope }}
