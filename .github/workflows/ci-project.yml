@@ -8,7 +8,7 @@ on:
         type: string
       junit-test-report-path:
         description: 'Select directories where junit report is located (separated by comma).'
-        required: true
+        required: false
         type: string
         default: '*/junit.xml'
       junit-test-coverage-configuration:
@@ -17,12 +17,21 @@ on:
         type: string
       full-analysis:
         description: 'Perform full analysis if true, if false only analysis of modified files.'
-        required: true
+        required: false
+        default: 'true'
+        type: string
+      working-directory:
+        description: 'Set working directory for your workflow.'
+        required: false
+        type: string
+      enable-tests:
+        description: 'Enable tests if true.'
+        required: false
         default: 'true'
         type: string
       enable-npm-registry:
         description: 'Enable npm registry.'
-        required: true
+        required: false
         default: 'false'
         type: string
     secrets:
@@ -50,22 +59,22 @@ jobs:
     name: Build
     timeout-minutes: 10
     runs-on: ubuntu-latest
-    environment: CI
     steps:
       - name: Setup node
         uses: vaimo/action-setup-node@v1
         with:
           node-version: ${{ inputs.node-version }}
+          working-directory: ${{ inputs.working-directory }}
           enable-npm-registry: ${{ inputs.enable-npm-registry }}
           npm-registry-url: ${{ secrets.npm-registry-url }}
           npm-registry-scope: ${{ secrets.npm-registry-scope }}
           npm-registry-email: ${{ secrets.npm-registry-email }}
           npm-registry-user: ${{ secrets.npm-registry-user }}
           npm-registry-password: ${{ secrets.npm-registry-password }}
+
       - name: Build action
         uses: vaimo/action-node-build@v1
         with:
-          node-version: ${{ inputs.node-version }}
           env-vars: ${{ secrets.env-vars }}
 
   code-quality:
@@ -77,33 +86,37 @@ jobs:
         uses: vaimo/action-setup-node@v1
         with:
           node-version: ${{ inputs.node-version }}
+          working-directory: ${{ inputs.working-directory }}
           enable-npm-registry: ${{ inputs.enable-npm-registry }}
           npm-registry-url: ${{ secrets.npm-registry-url }}
           npm-registry-scope: ${{ secrets.npm-registry-scope }}
           npm-registry-email: ${{ secrets.npm-registry-email }}
           npm-registry-user: ${{ secrets.npm-registry-user }}
           npm-registry-password: ${{ secrets.npm-registry-password }}
+
       - name: Code quality action
         uses: vaimo/action-node-eslint@v1
         with:
-          node-version: ${{ inputs.node-version }}
           full-analysis: ${{ inputs.full-analysis }}
 
   tests:
     name: Tests
     timeout-minutes: 10
     runs-on: ubuntu-latest
+    if: ${{ inputs.enable-tests == 'true' }}
     steps:
       - name: Setup node
         uses: vaimo/action-setup-node@v1
         with:
           node-version: ${{ inputs.node-version }}
+          working-directory: ${{ inputs.working-directory }}
           enable-npm-registry: ${{ inputs.enable-npm-registry }}
           npm-registry-url: ${{ secrets.npm-registry-url }}
           npm-registry-scope: ${{ secrets.npm-registry-scope }}
           npm-registry-email: ${{ secrets.npm-registry-email }}
           npm-registry-user: ${{ secrets.npm-registry-user }}
           npm-registry-password: ${{ secrets.npm-registry-password }}
+
       - name: Tests action
         uses: vaimo/action-node-tests@v1
         with:

@@ -3,44 +3,44 @@ on:
   workflow_call:
     inputs:
       allowed-dirs:
-        description: 'Directories where Cloud functions are located. Split by comma.'
+        description: "Directories where Cloud functions are located. Split by comma."
         required: true
         type: string
       acr-name:
-        description: 'Azure Container Registry name.'
+        description: "Azure Container Registry name."
         required: true
         type: string
       shared-rg-name:
-        description: 'Shared resource group name.'
+        description: "Shared resource group name."
         required: true
         type: string
       rg-name:
-        description: 'Resource group name.'
+        description: "Resource group name."
         required: true
         type: string
       environment:
-        description: 'Environment name.'
+        description: "Environment name."
         required: true
         type: string
       runner:
-        description: 'Runner for github action'
+        description: "Runner for github action"
         required: false
         type: string
     secrets:
       env-vars:
-        description: 'Environment variables to be set in .env file in a JSON format.'
+        description: "Environment variables to be set in .env file in a JSON format."
         required: true
       azure-tenant-id:
-        description: ''
+        description: ""
         required: true
       azure-client-id:
-        description: ''
+        description: ""
         required: true
       azure-shared-subscription-id:
-        description: ''
+        description: ""
         required: true
       azure-subscription-id:
-        description: ''
+        description: ""
         required: true
 
 concurrency:
@@ -139,22 +139,18 @@ jobs:
         run: |
           echo '${{ secrets.env-vars }}' > secrets.json
           ENV_CONFIGURATION=$(jq -r ".\"${{ matrix.directory }}\"" secrets.json)
-          IFS=';' read -r -a ENV_VARS <<< $ENV_CONFIGURATION
-          
-          for i in "${ENV_VARS[@]}"; do
-            KEY=${i%%=*}
-            VALUE=${i#*=}
-            echo "$KEY=$VALUE" >> ${{ matrix.directory }}/.env
-          done
+
+          # Parse the JSON object and write keys and values to the .env file
+          echo "$ENV_CONFIGURATION" | jq -r 'to_entries | .[] | "\(.key)=\(.value)"' > ${{ matrix.directory }}/.env
 
       - name: Resolve a Docker image with incremented tag
         run: |
           DOCKER_IMAGE_TAG=$(jq -r ".\"docker-image-tags\".\"${{ inputs.environment }}\"" ${{ matrix.directory }}/azure/config.json)
           echo $DOCKER_IMAGE_TAG
-          
+
           # Retrieve the latest Docker image tag from ACR
           LATEST_TAG=$(az acr repository show-tags --name ${{ inputs.acr-name }} --repository $DOCKER_IMAGE_TAG --orderby time_desc --output tsv | head -n 1)
-          
+
           # Check if LATEST_TAG is empty or not
           if [ -z "$LATEST_TAG" ]
           then
@@ -171,13 +167,13 @@ jobs:
               VERSION_NUMBER=0
             fi
           fi                
-          
+
           # Increment the version number
           NEW_VERSION_NUMBER=$((VERSION_NUMBER + 1))
-          
+
           # Build the Docker image with the new tag
           NEW_DOCKER_IMAGE_TAG="$DOCKER_IMAGE_TAG:$NEW_VERSION_NUMBER"
-          
+
           echo $NEW_DOCKER_IMAGE_TAG
 
           # Set the new Docker image tag as an environment variable for subsequent steps
