@@ -54,7 +54,7 @@ jobs:
       directories: ${{ steps.filter.outputs.directories }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Check changed files
         id: diff
@@ -126,7 +126,7 @@ jobs:
         directory: ${{ fromJSON(needs.changes.outputs.directories) }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Azure login
         uses: azure/login@v3
