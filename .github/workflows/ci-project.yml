@@ -1,9 +1,13 @@
-name: Node - Yarn CI workflow
+name: Node - CI workflow
 on:
   workflow_call:
     inputs:
       node-version:
         description: 'Set a node version for your workflow.'
+        required: true
+        type: string
+      package-manager:
+        description: 'Package manager to use. Supported values: npm, yarn, pnpm.'
         required: true
         type: string
       junit-test-report-path:
@@ -61,9 +65,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup node
-        uses: vaimo/action-setup-node@v1
+        uses: vaimo/action-setup-node@v2
         with:
           node-version: ${{ inputs.node-version }}
+          package-manager: ${{ inputs.package-manager }}
           working-directory: ${{ inputs.working-directory }}
           enable-npm-registry: ${{ inputs.enable-npm-registry }}
           npm-registry-url: ${{ secrets.npm-registry-url }}
@@ -73,8 +78,9 @@ jobs:
           npm-registry-password: ${{ secrets.npm-registry-password }}
 
       - name: Build action
-        uses: vaimo/action-node-build@v1
+        uses: vaimo/action-node-build@v2
         with:
+          package-manager: ${{ inputs.package-manager }}
           env-vars: ${{ secrets.env-vars }}
 
   code-quality:
@@ -83,9 +89,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup node
-        uses: vaimo/action-setup-node@v1
+        uses: vaimo/action-setup-node@v2
         with:
           node-version: ${{ inputs.node-version }}
+          package-manager: ${{ inputs.package-manager }}
           working-directory: ${{ inputs.working-directory }}
           enable-npm-registry: ${{ inputs.enable-npm-registry }}
           npm-registry-url: ${{ secrets.npm-registry-url }}
@@ -95,8 +102,9 @@ jobs:
           npm-registry-password: ${{ secrets.npm-registry-password }}
 
       - name: Code quality action
-        uses: vaimo/action-node-eslint@v1
+        uses: vaimo/action-node-eslint@v2
         with:
+          package-manager: ${{ inputs.package-manager }}
           full-analysis: ${{ inputs.full-analysis }}
 
   tests:
@@ -106,9 +114,10 @@ jobs:
     if: ${{ inputs.enable-tests == 'true' }}
     steps:
       - name: Setup node
-        uses: vaimo/action-setup-node@v1
+        uses: vaimo/action-setup-node@v2
         with:
           node-version: ${{ inputs.node-version }}
+          package-manager: ${{ inputs.package-manager }}
           working-directory: ${{ inputs.working-directory }}
           enable-npm-registry: ${{ inputs.enable-npm-registry }}
           npm-registry-url: ${{ secrets.npm-registry-url }}
@@ -118,7 +127,8 @@ jobs:
           npm-registry-password: ${{ secrets.npm-registry-password }}
 
       - name: Tests action
-        uses: vaimo/action-node-tests@v1
+        uses: vaimo/action-node-tests@v2
         with:
+          package-manager: ${{ inputs.package-manager }}
           junit-test-report-path: ${{ inputs.junit-test-report-path }}
           junit-test-coverage-configuration: ${{ inputs.junit-test-coverage-configuration }}

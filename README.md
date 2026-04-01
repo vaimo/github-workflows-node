@@ -2,16 +2,21 @@
 
 This repository contains reusable workflows for Node.js projects.
 
-**Author:** Patryk Waluś (patryk.walus@vaimo.com)
+**Author:** Patryk Walus (patryk.walus@vaimo.com)
 
 ## Supported Versions
 
-- **v4**  
-  Initial version of the workflows.
+- **v5**
+    - Added configurable package manager support (npm, yarn, pnpm).
+    - `package-manager` input is now required.
+    - Upgraded `actions/checkout` from v4 to v6.
+    - Upgraded `azure/login` from v2 to v3.
+- **v4**
+    Initial version of the workflows.
 
 ---
 
-## Node.js - Yarn CI Workflow
+## Node.js - CI Workflow
 
 This workflow sets up a Node.js environment, runs ESLint, and executes tests.
 
@@ -20,10 +25,13 @@ This workflow sets up a Node.js environment, runs ESLint, and executes tests.
 ```yaml
 jobs:
   ci-workflow:
-    uses: vaimo/github-workflows-node/.github/workflows/ci-project.yml@v4
+    uses: vaimo/github-workflows-node/.github/workflows/ci-project.yml@v5
     with:
       # Node.js version to install (Required)
       node-version: 20
+
+      # Package manager to use. Supported values: npm, yarn, pnpm. (Required)
+      package-manager: yarn
 
       # Directories where JUnit reports are located (Optional, defaults to */junit.xml)
       junit-test-report-path: azure-functions/*/junit.xml,sdk/*/junit.xml
@@ -66,7 +74,7 @@ jobs:
 ```yaml
 jobs:
   cd-workflow:
-    uses: vaimo/github-workflows-node/.github/workflows/azure-webapp-cd.yml@v4
+    uses: vaimo/github-workflows-node/.github/workflows/azure-webapp-cd.yml@v5
     with:
       # Azure container registry (Required)
       acr-name: acr-name
@@ -106,7 +114,7 @@ jobs:
 ```yaml
 jobs:
   cd-workflow:
-    uses: vaimo/github-workflows-node/.github/workflows/azure-iac-cd.yml@v4
+    uses: vaimo/github-workflows-node/.github/workflows/azure-iac-cd.yml@v5
     with:
       # Directories where cloud functions are located (Required, split by comma)
       allowed-dirs: "azure-functions"
