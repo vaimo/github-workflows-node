@@ -54,10 +54,10 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Azure login
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           tenant-id: ${{ secrets.azure-tenant-id }}
           client-id: ${{ secrets.azure-client-id }}
