@@ -6,11 +6,14 @@ This repository contains reusable workflows for Node.js projects.
 
 ## Supported Versions
 
+- **v6**
+    - Upgraded `actions/checkout` from v4 to v6 (requires Node 24).
+    - Upgraded `azure/login` from v2 to v3 (requires Node 24).
+    - **Self-hosted runners must be on v2.328.0+** for Node 24 JavaScript-action support. Use `@v5` if your runners are older.
 - **v5**
     - Added configurable package manager support (npm, yarn, pnpm).
     - `package-manager` input is now required.
-    - Upgraded `actions/checkout` from v4 to v6.
-    - Upgraded `azure/login` from v2 to v3.
+    - `actions/checkout` pinned to v4 and `azure/login` pinned to v2 for compatibility with self-hosted runners older than v2.328.0. Upgrade to `@v6` once your runners support Node 24.
 - **v4**
     Initial version of the workflows.
 
@@ -25,7 +28,7 @@ This workflow sets up a Node.js environment, runs ESLint, and executes tests.
 ```yaml
 jobs:
   ci-workflow:
-    uses: vaimo/github-workflows-node/.github/workflows/ci-project.yml@v5
+    uses: vaimo/github-workflows-node/.github/workflows/ci-project.yml@v6
     with:
       # Node.js version to install (Required)
       node-version: 20
@@ -74,7 +77,7 @@ jobs:
 ```yaml
 jobs:
   cd-workflow:
-    uses: vaimo/github-workflows-node/.github/workflows/azure-webapp-cd.yml@v5
+    uses: vaimo/github-workflows-node/.github/workflows/azure-webapp-cd.yml@v6
     with:
       # Azure container registry (Required)
       acr-name: acr-name
@@ -114,7 +117,7 @@ jobs:
 ```yaml
 jobs:
   cd-workflow:
-    uses: vaimo/github-workflows-node/.github/workflows/azure-iac-cd.yml@v5
+    uses: vaimo/github-workflows-node/.github/workflows/azure-iac-cd.yml@v6
     with:
       # Directories where cloud functions are located (Required, split by comma)
       allowed-dirs: "azure-functions"
